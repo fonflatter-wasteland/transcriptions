@@ -4,7 +4,7 @@ module.exports = function(app) {
   var fs = require('fs-extra');
   var sprintf = require('sprintf');
 
-  var Comic = require('../lib/Comic');
+  var Comic = require('fonflatter-comics/lib/Comic');
 
   var COMIC_URL_PATTERN = /(\d{4})\/(\d{2})\/(\d{2})\/$/;
   var MAX_NUM_TRANSCRIPTIONS = 10;
