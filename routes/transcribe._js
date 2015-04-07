@@ -2,15 +2,15 @@ module.exports = function(app) {
   'use strict';
 
   var fs = require('fs-extra');
+  var moment = require('moment');
   var sprintf = require('sprintf');
 
   var Comic = require('fonflatter-comics/lib/Comic');
 
-  var COMIC_URL_PATTERN = /(\d{4})\/(\d{2})\/(\d{2})\/$/;
   var MAX_NUM_TRANSCRIPTIONS = 10;
 
-  function getDefaultValues(comicDate, _) {
-    var filePath = getFilePath(comicDate);
+  function getDefaultValues(comic, _) {
+    var filePath = getFilePath(comic);
     var transcriptionFiles = fs.readdir(filePath, _);
     transcriptionFiles.sort();
     var lastTranscriptionFile = transcriptionFiles.pop();
@@ -18,13 +18,13 @@ module.exports = function(app) {
     var lastTranscription = fs.readJSON(filePath + '/' + lastTranscriptionFile,
       _);
     lastTranscription.date =
-      new Date(lastTranscriptionFile.substr(0, 24)).toISOString().substr(0, 10);
+      moment(lastTranscriptionFile.replace(/\.json$/, ''));
 
     return lastTranscription;
   }
 
-  function getFilePath(comicDate) {
-    return 'data/transcriptions/' + comicDate.format('YYYY/MM/DD/');
+  function getFilePath(comic) {
+    return 'data/transcriptions/' + comic.date.format('YYYY/MM/DD/');
   }
 
   function isCorrectSolution(solution, firstNumber, secondNumber) {
@@ -36,48 +36,47 @@ module.exports = function(app) {
       parseInt(firstNumber) + parseInt(secondNumber);
   }
 
-  function saveTranscription(comicDate, data, _) {
-    var filePath = getFilePath(comicDate);
+  function saveTranscription(comic, data, _) {
+    var filePath = getFilePath(comic);
 
     fs.mkdirp(filePath, _);
 
     if (fs.readdir(filePath, _).length + 1 > MAX_NUM_TRANSCRIPTIONS) {
       throw new Error('Too many transcriptions for ' +
-      comicDate.toISOString().substr(0, 10) + '!');
+      comic.date.format('YYYY-MM-DD') + '!');
     }
 
     if (!data.user) {
       data.user = null;
     }
 
-    var now = new Date(Date.now());
-    var fileName = filePath + now.toISOString() + '.json';
+    var now = moment.utc();
+    var fileName = filePath + now.format() + '.json';
     fs.writeFile(fileName, JSON.stringify({
       user: data.user,
       text: data.text,
     }, null, 4) + '\n', _);
   }
 
-  app.get(COMIC_URL_PATTERN, function(req, res, _) {
-    var comicDate = Comic.parseDate(req.params);
-    var imageUrl = Comic.formatImageURL(comicDate);
+  app.get(Comic.URL_PATTERN, function(req, res, _) {
+    var comic = new Comic(req.params);
 
     var input;
     try {
-      input = getDefaultValues(comicDate, _);
+      input = getDefaultValues(comic, _);
     } catch (e) {
       input = {};
     }
 
     res.render('transcribe.html', {
       app: req.app,
-      imageUrl: imageUrl,
+      comic: comic,
       input: input,
     });
   });
 
-  app.post(COMIC_URL_PATTERN, function(req, res, _) {
-    var comicDate = Comic.parseDate(req.params);
+  app.post(Comic.URL_PATTERN, function(req, res, _) {
+    var comic = new Comic(req.params);
     var result = {
       errors: [],
       submitted: false,
@@ -94,7 +93,7 @@ module.exports = function(app) {
 
     if (result.errors.length === 0) {
       try {
-        saveTranscription(comicDate, {
+        saveTranscription(comic, {
           user: req.body.user.trim(),
           text: req.body.text,
         }, _);

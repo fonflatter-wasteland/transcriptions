@@ -41,7 +41,7 @@
 
         {% if not result %}
             <div class="text-center" id="comic">
-                <img src="//fonflatter.de/{{ imageUrl }}"/>
+                <img src="//fonflatter.de/{{ comic.getImageURL() }}"/>
             </div>
             <hr>
         {% endif %}
@@ -54,7 +54,7 @@
 
                     <div class="col-lg-4">
                         <input id="date" class="form-control input-sm text-center" type="text" disabled="disabled"
-                               value="{{ input.date }}">
+                               value="{{ input.date.format('YYYY-MM-DD') }}">
                     </div>
                 </div>
             {%- endif %}
