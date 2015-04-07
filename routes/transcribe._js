@@ -24,11 +24,7 @@ module.exports = function(app) {
   }
 
   function getFilePath(comicDate) {
-    return sprintf('data/transcriptions/%(year)04d/%(month)02d/%(day)02d/', {
-      year: comicDate.getFullYear(),
-      month: comicDate.getMonth() + 1,
-      day: comicDate.getDate(),
-    });
+    return 'data/transcriptions/' + comicDate.format('YYYY/MM/DD/');
   }
 
   function isCorrectSolution(solution, firstNumber, secondNumber) {
